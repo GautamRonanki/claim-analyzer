@@ -70,7 +70,11 @@ def call_llm_with_retry(messages, temperature=0.3, max_retries=2):
                 time.sleep(delay)
             else:
                 raise Exception(f"Rate limit exceeded after {max_retries} retries: {e}")
-        
+
+        # Non-retryable errors must come before general APIError since they inherit from it
+        except (BadRequestError, AuthenticationError, PermissionDeniedError, NotFoundError) as e:
+            raise Exception(f"Invalid request (no retry): {e}")
+
         except (APIError, APIConnectionError, InternalServerError) as e:
             if attempt < max_retries:
                 delay = retry_delays[attempt]
@@ -78,9 +82,6 @@ def call_llm_with_retry(messages, temperature=0.3, max_retries=2):
                 time.sleep(delay)
             else:
                 raise Exception(f"Server error after {max_retries} retries: {e}")
-        
-        except (BadRequestError, AuthenticationError, PermissionDeniedError, NotFoundError) as e:
-            raise Exception(f"Invalid request (no retry): {e}")
     
     raise Exception("Unexpected retry loop exit")
 
@@ -160,8 +161,9 @@ def post_process_claims(claims: list) -> list:
         if "claim" not in claim or "uncertainty" not in claim:
             continue
             
-        # Enforce valid uncertainty labels
-        uncertainty = claim.get("uncertainty", "").lower()
+        # Enforce valid uncertainty labels (handle non-string values)
+        raw_uncertainty = claim.get("uncertainty", "")
+        uncertainty = str(raw_uncertainty).lower() if raw_uncertainty else ""
         if uncertainty not in VALID_UNCERTAINTY_LABELS:
             # Default to "uncertain" if invalid
             uncertainty = "uncertain"
