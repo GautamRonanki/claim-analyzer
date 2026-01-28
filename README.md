@@ -15,8 +15,19 @@ Extract factual claims from text and label their uncertainty levels based on lan
 streamlit run app.py
 ```
 
-**Command Line Tests:**
+**Run Tests:**
 ```bash
+# Run the full pytest test suite (105 tests)
+python -m pytest tests/ -v
+
+# Run specific test files
+python -m pytest tests/test_validate_input.py -v
+python -m pytest tests/test_analyze_text.py -v
+
+# Run with coverage (requires pytest-cov)
+python -m pytest tests/ --cov=. --cov-report=term-missing
+
+# Legacy manual test scripts
 python test_analyzer.py        # Normal cases
 python break_analyzer.py       # Edge cases
 ```
@@ -52,9 +63,17 @@ Optimizes for both reliability and cost.
 claim-analyzer/
 ├── config.py           # Settings & constants
 ├── analyzer.py         # Core pipeline logic
-├── test_analyzer.py    # Standard tests
-├── break_analyzer.py   # Adversarial tests
-└── app.py             # Streamlit web UI
+├── app.py              # Streamlit web UI
+├── pytest.ini          # Pytest configuration
+├── test_analyzer.py    # Legacy manual tests
+├── break_analyzer.py   # Legacy adversarial tests
+└── tests/              # Pytest test suite
+    ├── conftest.py               # Shared fixtures
+    ├── test_validate_input.py    # Input validation tests (27)
+    ├── test_post_process_claims.py # Post-processing tests (23)
+    ├── test_call_llm_with_retry.py # Retry logic tests (17)
+    ├── test_extract_claims.py    # Extraction tests (14)
+    └── test_analyze_text.py      # Integration tests (22)
 ```
 
 ## Future Improvements
